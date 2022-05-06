@@ -27,33 +27,39 @@ public class Board
     /// <returns></returns>
     public static IEnumerable<(int, int)> GetSquareFields(int row, int col)
     {
-        Func<int, int[]> getThreePart = x => {
+        Func<int, int[]> getThreePart = x =>
+        {
             if (x < 0 || x > 8)
                 throw new ArgumentException($"invalid index for {x}");
 
             if (x < 3)
-                return new int[] {0, 1, 2};
+                return new int[] { 0, 1, 2 };
             else if (x < 6)
-                return new int[] {3, 4, 5};
+                return new int[] { 3, 4, 5 };
             else
-                return new int[] {6, 7, 8};
+                return new int[] { 6, 7, 8 };
         };
 
         return getThreePart(row).SelectMany(x => getThreePart(col).Select(y => (x, y)));
     }
-    public static IEnumerable<(int, int)> GetRowFields(int row) {
+    public static IEnumerable<(int, int)> GetRowFields(int row)
+    {
         return Enumerable.Range(0, 9).Select(x => (row, x));
     }
-    public static IEnumerable<(int, int)> GetColumnFields(int col) {
+    public static IEnumerable<(int, int)> GetColumnFields(int col)
+    {
         return Enumerable.Range(0, 9).Select(x => (x, col));
     }
-    public static IEnumerable<(int, int)> GetAllFields() {
+    public static IEnumerable<(int, int)> GetAllFields()
+    {
         return Enumerable.Range(0, 9).SelectMany(x => Enumerable.Range(0, 9).Select(y => (x, y)));
     }
-    public static IEnumerable<int> GetAllDigits() 
+    public static IEnumerable<int> GetAllDigits()
         => Enumerable.Range(0, 9);
-    public static IEnumerable<(int, int)> GetSquareFields(int squareId) {
-        return squareId switch {
+    public static IEnumerable<(int, int)> GetSquareFields(int squareId)
+    {
+        return squareId switch
+        {
             0 => GetSquareFields(0, 0),
             1 => GetSquareFields(3, 0),
             2 => GetSquareFields(6, 0),
@@ -65,6 +71,11 @@ public class Board
             8 => GetSquareFields(6, 6),
             _ => throw new ArgumentException("invalid square id"),
         };
+    }
+
+    public static IEnumerable<IEnumerable<(int, int)>> GetAllCompounds()
+    {
+        return Enumerable.Range(0, 9).SelectMany(x => new IEnumerable<(int, int)>[] { GetRowFields(x), GetColumnFields(x), GetSquareFields(x) });
     }
 
     public Board(int[,] digits)
