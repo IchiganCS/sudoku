@@ -1,6 +1,9 @@
-public class Solver
-{
+public class Solver {
     private Board Board { get; init; }
+    /// <summary>
+    /// should be ordered
+    /// </summary>
+    /// <value></value>
     private List<int>[,] Markings { get; set; }
 
     /// <summary>
@@ -8,15 +11,13 @@ public class Solver
     /// </summary>
     /// <param name="row"></param>
     /// <param name="col"></param>
-    private void StrikeMarkings(int row, int col)
-    {
+    private void StrikeMarkings(int row, int col) {
         if (Markings[row, col].Count != 1)
             throw new ArgumentException($"there isn't exactly one digit at {row}, {col}");
 
         int digit = Markings[row, col][0];
 
-        for (int i = 0; i < 9; i++)
-        {
+        for (int i = 0; i < 9; i++) {
             Markings[row, i].Remove(digit);
             Markings[i, col].Remove(digit);
         }
@@ -28,15 +29,13 @@ public class Solver
         Markings[row, col].Add(digit);
     }
 
-    private void WriteMarking(int row, int col, int digit)
-    {
+    private void WriteMarking(int row, int col, int digit) {
         Markings[row, col].Clear();
         Markings[row, col].Add(digit);
         StrikeMarkings(row, col);
     }
 
-    public Solver(Board board)
-    {
+    public Solver(Board board) {
         Board = board;
 
         Markings = new List<int>[9, 9];
@@ -56,19 +55,15 @@ public class Solver
     /// may need to be executed multiple times
     /// </summary>
     /// <returns>whether Markings has been changed</returns>
-    public bool LookForOnePlaceLeft()
-    {
+    public bool OneSquareLeftReduction() {
         bool hasChanged = false;
-        Action<(int, int)[]> lookFor = squares =>
-        {
+        Action<(int, int)[]> lookFor = squares => {
             //if a digit is found, set index=digit to found square. if another is found, set to -2.
             //at the end, foundDigits contains certains
             int[] foundDigits = new int[9] { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
-            foreach (var ((row, col), index) in squares.Zip(Enumerable.Range(0, 9)))
-            {
-                Markings[row, col].ForEach(x =>
-                {
+            foreach (var ((row, col), index) in squares.Zip(Enumerable.Range(0, 9))) {
+                Markings[row, col].ForEach(x => {
                     if (foundDigits[x - 1] == -1)
                         foundDigits[x - 1] = index;
                     else if (foundDigits[x - 1] != -2)
@@ -76,14 +71,12 @@ public class Solver
                 });
             }
 
-            for (int i = 0; i < foundDigits.Length; i++)
-            {
+            for (int i = 0; i < foundDigits.Length; i++) {
                 if (foundDigits[i] == -1)
                     throw new UnsolvableException
                         ($"the sudoku is not solvable: {i} cannot be placed in the squares {squares.Aggregate("", (x, y) => x + $" {y.Item1},{y.Item2}")}");
 
-                if (foundDigits[i] >= 0)
-                {
+                if (foundDigits[i] >= 0) {
                     var (r, c) = squares[foundDigits[i]];
                     if (Markings[r, c].Count == 1)
                         continue;
@@ -95,29 +88,29 @@ public class Solver
         };
 
 
-        foreach (var comp in Board.GetAllCompounds())
-        {
+        foreach (var comp in Board.GetAllCompounds()) {
             lookFor(comp.ToArray());
         }
 
         return hasChanged;
     }
 
-    public bool CrossCompoundReduction()
-    {
+    /// <summary>
+    /// if one compound leaves us with certain positions for a digit and whereof all lie in another compound,
+    /// we can eliminate the digit from every other square in that compound
+    /// </summary>
+    /// <returns>whether Markings has been changed</returns>
+    public bool CrossCompoundReduction() {
         bool hasChanged = false;
-        foreach (var compound in Board.GetAllCompounds())
-        {
-            foreach (int digit in Board.GetAllDigits().Select(x => x + 1))
-            {
+
+        foreach (var compound in Board.GetAllCompounds()) {
+            foreach (int digit in Board.GetAllDigits()) {
                 IEnumerable<(int, int)> hasDigits = compound.Where(x => Markings[x.Item1, x.Item2].Contains(digit));
-                if (hasDigits.Count() > 1 && hasDigits.Count() <= 3)
-                {
+
+                if (hasDigits.Count() > 1 && hasDigits.Count() <= 3) {
                     var compoundsToReduce = Board.GetAllCompounds().Where(x => x.Intersect(hasDigits).Count() == hasDigits.Count());
-                    foreach (var reduceComp in compoundsToReduce)
-                    {
-                        foreach (var (r, c) in reduceComp)
-                        {
+                    foreach (var reduceComp in compoundsToReduce) {
+                        foreach (var (r, c) in reduceComp) {
                             if (hasDigits.Contains((r, c)))
                                 continue;
 
@@ -133,45 +126,48 @@ public class Solver
         return hasChanged;
     }
 
-    public bool HiddenDigitsReduction()
-    {
+    /// <summary>
+    /// if we have the same combination of digits in a few squares in a compound and all the digits nowhere else,
+    /// we can eliminate any other digits from the first few
+    /// </summary>
+    /// <returns>whether Markings has been changed</returns>
+    public bool HiddenDigitsReduction() {
         bool hasChanged = false;
 
-        foreach (var compound in Board.GetAllCompounds())
-        {
+        foreach (var compound in Board.GetAllCompounds()) {
             (int, int)[] comp = compound.ToArray();
 
             List<int>[] whereIsDigit = new List<int>[9];
             for (int i = 0; i < 9; i++)
                 whereIsDigit[i] = new();
 
-            foreach (var ((r, c), i) in comp.Zip(Board.GetAllDigits()))
-            {
+            foreach (var ((r, c), i) in comp.Zip(Board.GetAllIndices())) {
                 foreach (int mark in Markings[r, c])
                     whereIsDigit[mark - 1].Add(i);
             }
 
-            for (int digitToCheck = 0; digitToCheck < 9; digitToCheck++)
-            {
-                if (whereIsDigit[digitToCheck].Count == 2)
-                {
-                    IEnumerable<int> otherDigits = Board.GetAllDigits().Where(j => j != digitToCheck && whereIsDigit[j].OrderBy(x => x).SequenceEqual(whereIsDigit[digitToCheck].OrderBy(x => x)));
-                    if (otherDigits.Count() != 1)
+            for (int digitToCheck = 0; digitToCheck < 9; digitToCheck++) {
+                if (whereIsDigit[digitToCheck].Count > 1 || whereIsDigit[digitToCheck].Count < 4) {
+                    IEnumerable<int> otherDigits = Board.GetAllIndices().Where(j => j != digitToCheck && whereIsDigit[j].SequenceEqual(whereIsDigit[digitToCheck]));
+                    IEnumerable<int> allDigits = otherDigits.Append(digitToCheck);
+                    allDigits = allDigits.Select(x => x + 1).OrderBy(x => x);
+
+                    if (allDigits.Count() != whereIsDigit[digitToCheck].Count)
                         continue;
 
-                    IEnumerable<int> allDigits = otherDigits.Append(digitToCheck);
 
-                    for (int cellToRemove = 0; cellToRemove < 9; cellToRemove++)
-                    {
+                    for (int cellToRemove = 0; cellToRemove < 9; cellToRemove++) {
                         List<int> markingToAdjust = Markings[comp[cellToRemove].Item1, comp[cellToRemove].Item2];
-                        if (whereIsDigit[digitToCheck].Contains(cellToRemove))
-                        {
+
+                        if (whereIsDigit[digitToCheck].Contains(cellToRemove)) {
+                            if (markingToAdjust.SequenceEqual(allDigits))
+                                continue;
                             markingToAdjust.Clear();
-                            markingToAdjust.AddRange(allDigits.Select(x => x + 1));
+                            markingToAdjust.AddRange(allDigits);
+                            hasChanged = true;
                         }
-                        else
-                        {
-                            if (markingToAdjust.RemoveAll(x => allDigits.Contains(x - 1)) != 0)
+                        else {
+                            if (markingToAdjust.RemoveAll(allDigits.Contains) != 0)
                                 hasChanged = true;
                         }
                     }
@@ -182,18 +178,18 @@ public class Solver
         return hasChanged;
     }
 
+    public bool ExecuteIteration() {
+        return OneSquareLeftReduction() || CrossCompoundReduction() || HiddenDigitsReduction();
+    }
 
 
-    public IEnumerable<(int, int)> GetCertains()
-    {
+    public IEnumerable<(int, int)> GetCertains() {
         return Board.GetAllFields().Where(tup => Board.Digits[tup.Item1, tup.Item2] == -1 && Markings[tup.Item1, tup.Item2].Count == 1);
     }
 
-    public bool WriteToBoard()
-    {
+    public bool WriteToBoard() {
         bool hasChanged = false;
-        foreach (var (r, c) in GetCertains())
-        {
+        foreach (var (r, c) in GetCertains()) {
             hasChanged = true;
             Board.Digits[r, c] = Markings[r, c][0];
         }

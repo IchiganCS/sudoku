@@ -1,9 +1,7 @@
 using System;
 
-public class Sudoku
-{
-    public static void Main(string[] args)
-    {
+public class Sudoku {
+    public static void Main(string[] args) {
         //board 63 in SUPERSCHWER
         Board exampleBoard = new(
             new int[9, 9] {
@@ -49,20 +47,6 @@ public class Sudoku
         Console.WriteLine(exampleBoard);
 
         Solver sol = new(exampleBoard);
-        for (int i = 0; i < 15; i++)
-        {
-            sol.LookForOnePlaceLeft();
-            sol.WriteToBoard();
-            Console.WriteLine(exampleBoard);
-            sol.CrossCompoundReduction();
-            sol.WriteToBoard();
-            Console.WriteLine(exampleBoard);
-            sol.HiddenDigitsReduction();
-            sol.WriteToBoard();
-            Console.WriteLine(exampleBoard);
-        };
-        sol.WriteToBoard();
-        Console.WriteLine(exampleBoard);
-
+        while (sol.ExecuteIteration()) { sol.WriteToBoard(); Console.WriteLine(exampleBoard); }
     }
 }

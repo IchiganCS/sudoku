@@ -1,8 +1,6 @@
-public class UnsolvableException : Exception
-{
+public class UnsolvableException : Exception {
     public UnsolvableException(string msg) :
-        base(msg)
-    {
+        base(msg) {
 
     }
 }

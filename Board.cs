@@ -1,11 +1,9 @@
-public class Board
-{
+public class Board {
     //-1 for not filled in
     //row first
     public int[,] Digits { get; init; }
 
-    public Board()
-    {
+    public Board() {
         Digits = new int[9, 9] {
             {-1, -1, -1, -1, -1, -1, -1, -1, -1},
             {-1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -25,10 +23,8 @@ public class Board
     /// <param name="row"></param>
     /// <param name="col"></param>
     /// <returns></returns>
-    public static IEnumerable<(int, int)> GetSquareFields(int row, int col)
-    {
-        Func<int, int[]> getThreePart = x =>
-        {
+    public static IEnumerable<(int, int)> GetSquareFields(int row, int col) {
+        Func<int, int[]> getThreePart = x => {
             if (x < 0 || x > 8)
                 throw new ArgumentException($"invalid index for {x}");
 
@@ -42,24 +38,23 @@ public class Board
 
         return getThreePart(row).SelectMany(x => getThreePart(col).Select(y => (x, y)));
     }
-    public static IEnumerable<(int, int)> GetRowFields(int row)
-    {
+    public static IEnumerable<(int, int)> GetRowFields(int row) {
         return Enumerable.Range(0, 9).Select(x => (row, x));
     }
-    public static IEnumerable<(int, int)> GetColumnFields(int col)
-    {
+    public static IEnumerable<(int, int)> GetColumnFields(int col) {
         return Enumerable.Range(0, 9).Select(x => (x, col));
     }
-    public static IEnumerable<(int, int)> GetAllFields()
-    {
+    public static IEnumerable<(int, int)> GetAllFields() {
         return Enumerable.Range(0, 9).SelectMany(x => Enumerable.Range(0, 9).Select(y => (x, y)));
     }
-    public static IEnumerable<int> GetAllDigits()
+    public static IEnumerable<int> GetAllIndices()
         => Enumerable.Range(0, 9);
-    public static IEnumerable<(int, int)> GetSquareFields(int squareId)
-    {
-        return squareId switch
-        {
+
+    public static IEnumerable<int> GetAllDigits()
+        => Enumerable.Range(1, 10);
+
+    public static IEnumerable<(int, int)> GetSquareFields(int squareId) {
+        return squareId switch {
             0 => GetSquareFields(0, 0),
             1 => GetSquareFields(3, 0),
             2 => GetSquareFields(6, 0),
@@ -73,13 +68,11 @@ public class Board
         };
     }
 
-    public static IEnumerable<IEnumerable<(int, int)>> GetAllCompounds()
-    {
+    public static IEnumerable<IEnumerable<(int, int)>> GetAllCompounds() {
         return Enumerable.Range(0, 9).SelectMany(x => new IEnumerable<(int, int)>[] { GetRowFields(x), GetColumnFields(x), GetSquareFields(x) });
     }
 
-    public Board(int[,] digits)
-    {
+    public Board(int[,] digits) {
         if (digits.GetLength(0) != 9 || digits.GetLength(1) != 9)
             throw new ArgumentException($"{nameof(digits)} may not have a dimension other than 9");
 
@@ -88,19 +81,16 @@ public class Board
 
 
 
-    public override string ToString()
-    {
+    public override string ToString() {
         string separatorLine = "+-------+-------+-------+";
         string digitSeparator = "| ";
         string res = "";
 
-        for (int i = 0; i < 9; i++)
-        {
+        for (int i = 0; i < 9; i++) {
             if (i % 3 == 0)
                 res += separatorLine + "\n";
 
-            for (int j = 0; j < 9; j++)
-            {
+            for (int j = 0; j < 9; j++) {
                 int digit = Digits[i, j];
 
                 if (j % 3 == 0)
